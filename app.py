@@ -9,6 +9,15 @@ import base64
 import os
 import secrets
 import socket
+from datetime import datetime
+import pytz
+
+# set timezone ke WIB
+wib = pytz.timezone('Asia/Jakarta')
+
+now = datetime.now(wib)
+print("Sekarang:", now.strftime("%Y-%m-%d %H:%M:%S"))
+
 
 #  Flask
 app = Flask(__name__)
@@ -553,4 +562,5 @@ if __name__ == '__main__':
     print_startup_info()
     
     # Jalankan dengan host 0.0.0.0 agar bisa diakses dari HP
+
     app.run(debug=True, host='0.0.0.0', port=5000)
