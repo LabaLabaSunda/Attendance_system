@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Gaji {{ user.username }} - Sistem Payroll{% endblock %}
+
+{% block content %}
+<div class="salary-container">
+    <div class="page-header">
+        <h1>Pengaturan Gaji</h1>
+        <p>Karyawan: <strong>{{ user.username }}</strong></p>
+    </div>
+
+    <div class="salary-form-container">
+        <form method="POST" class="salary-form">
+            <div class="form-section">
+                <h3>Informasi Gaji</h3>
+                
+                <div class="form-group">
+                    <label for="daily_wage">Gaji Harian (Rp)</label>
+                    <input type="number" 
+                           id="daily_wage" 
+                           name="daily_wage" 
+                           value="{{ salary.daily_wage if salary else 0 }}"
+                           step="1000" 
+                           min="0"
+                           placeholder="contoh: 150000">
+                    <small>Gaji yang diterima per hari masuk kerja</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="overtime_rate">Upah Lembur per Jam (Rp)</label>
+                    <input type="number" 
+                           id="overtime_rate" 
+                           name="overtime_rate" 
+                           value="{{ salary.overtime_rate if salary else 0 }}"
+                           step="1000" 
+                           min="0"
+                           placeholder="contoh: 25000">
+                    <small>Upah lembur yang diterima per jam setelah jam kerja normal</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="meal_allowance">Uang Makan per 4 Jam Lembur (Rp)</label>
+                    <input type="number" 
+                           id="meal_allowance" 
+                           name="meal_allowance" 
+                           value="{{ salary.meal_allowance if salary else 25000 }}"
+                           step="1000" 
+                           min="0"
+                           placeholder="contoh: 25000">
+                    <small>Uang makan yang diterima setiap 4 jam lembur</small>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Informasi Hutang</h3>
+                
+                <div class="form-group">
+                    <label for="debt_amount">Total Hutang Saat Ini (Rp)</label>
+                    <input type="number" 
+                           id="debt_amount" 
+                           name="debt_amount" 
+                           value="{{ debt.debt_amount if debt else 0 }}"
+                           step="1000" 
+                           min="0"
+                           placeholder="contoh: 500000">
+                    <small>Jumlah hutang yang masih harus dibayar</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="weekly_deduction">Potongan Mingguan (Rp)</label>
+                    <input type="number" 
+                           id="weekly_deduction" 
+                           name="weekly_deduction" 
+                           value="{{ debt.weekly_deduction if debt else 0 }}"
+                           step="1000" 
+                           min="0"
+                           placeholder="contoh: 50000">
+                    <small>Jumlah yang dipotong dari gaji setiap minggu</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="debt_description">Keterangan Hutang</label>
+                    <textarea id="debt_description" 
+                              name="debt_description" 
+                              rows="3"
+                              placeholder="contoh: Pinjaman untuk keperluan pribadi">{{ debt.description if debt else '' }}</textarea>
+                    <small>Keterangan atau alasan hutang (opsional)</small>
+                </div>
+            </div>
+
+            <div class="salary-preview">
+                <h3>Preview Perhitungan Gaji</h3>
+                <div class="preview-grid">
+                    <div class="preview-item">
+                        <span class="preview-label">Gaji 5 hari kerja:</span>
+                        <span class="preview-value" id="preview-basic">Rp 0</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Lembur 10 jam:</span>
+                        <span class="preview-value" id="preview-overtime">Rp 0</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Uang makan 2x:</span>
+                        <span class="preview-value" id="preview-meal">Rp 0</span>
+                    </div>
+                    <div class="preview-item total">
+                        <span class="preview-label"><strong>Total Kotor:</strong></span>
+                        <span class="preview-value" id="preview-gross"><strong>Rp 0</strong></span>
+                    </div>
+                    <div class="preview-item deduction">
+                        <span class="preview-label">Potongan Hutang:</span>
+                        <span class="preview-value" id="preview-deduction">- Rp 0</span>
+                    </div>
+                    <div class="preview-item net-total">
+                        <span class="preview-label"><strong>Take Home Pay:</strong></span>
+                        <span class="preview-value" id="preview-net"><strong>Rp 0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
+                <a href="{{ url_for('payroll_dashboard') }}" class="btn btn-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.salary-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    color: white;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.salary-form-container {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.form-section h3 {
+    color: #333;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 0.5rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.salary-preview {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin: 2rem 0;
+    border: 2px dashed #667eea;
+}
+
+.salary-preview h3 {
+    color: #667eea;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.preview-grid {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem;
+    background: white;
+    border-radius: 6px;
+}
+
+.preview-item.total {
+    background: #e3f2fd;
+    border: 1px solid #2196f3;
+}
+
+.preview-item.deduction {
+    background: #ffebee;
+    border: 1px solid #f44336;
+}
+
+.preview-item.net-total {
+    background: #e8f5e8;
+    border: 2px solid #4caf50;
+    font-size: 1.1rem;
+}
+
+.preview-label {
+    color: #555;
+}
+
+.preview-value {
+    font-weight: 600;
+    color: #333;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e1e5e9;
+}
+
+@media (max-width: 768px) {
+    .salary-container {
+        padding: 1rem;
+    }
+    
+    .salary-form-container {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .preview-item {
+        font-size: 0.9rem;
+        padding: 0.6rem;
+    }
+}
+</style>
+
+<script>
+function formatRupiah(amount) {
+    return new Intl.NumberFormat('id-ID').format(amount);
+}
+
+function updatePreview() {
+    const dailyWage = parseFloat(document.getElementById('daily_wage').value) || 0;
+    const overtimeRate = parseFloat(document.getElementById('overtime_rate').value) || 0;
+    const mealAllowance = parseFloat(document.getElementById('meal_allowance').value) || 0;
+    const weeklyDeduction = parseFloat(document.getElementById('weekly_deduction').value) || 0;
+    
+    // Preview calculations (example: 5 days work, 10 hours overtime, 2 meal allowances)
+    const basicPay = dailyWage * 5;
+    const overtimePay = overtimeRate * 10;
+    const mealPay = mealAllowance * 2;
+    const grossPay = basicPay + overtimePay + mealPay;
+    const netPay = grossPay - weeklyDeduction;
+    
+    document.getElementById('preview-basic').textContent = 'Rp ' + formatRupiah(basicPay);
+    document.getElementById('preview-overtime').textContent = 'Rp ' + formatRupiah(overtimePay);
+    document.getElementById('preview-meal').textContent = 'Rp ' + formatRupiah(mealPay);
+    document.getElementById('preview-gross').textContent = 'Rp ' + formatRupiah(grossPay);
+    document.getElementById('preview-deduction').textContent = '- Rp ' + formatRupiah(weeklyDeduction);
+    document.getElementById('preview-net').textContent = 'Rp ' + formatRupiah(netPay);
+}
+
+// Update preview when inputs change
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = ['daily_wage', 'overtime_rate', 'meal_allowance', 'weekly_deduction'];
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', updatePreview);
+    });
+    
+    // Initial preview update
+    updatePreview();
+});
+</script>
+{% endblock %}
