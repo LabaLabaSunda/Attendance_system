@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Absensi - {{ user.username }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .attendance-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid #667eea;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .table-header {
+            background: #667eea;
+            color: white;
+            padding: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .attendance-table th,
+        .attendance-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .attendance-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .attendance-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-hadir {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .no-data {
+            color: #999;
+            font-style: italic;
+        }
+
+        .no-data-message {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .back-button {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .attendance-container {
+                padding: 0.5rem;
+            }
+            
+            .header {
+                padding: 1.5rem;
+            }
+            
+            .user-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .attendance-table {
+                font-size: 0.9rem;
+            }
+            
+            .attendance-table th,
+            .attendance-table td {
+                padding: 0.7rem 0.5rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-number {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="attendance-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="user-avatar">
+                {{ user.username[0].upper() }}
+            </div>
+            <h1>📋 Riwayat Absensi</h1>
+            <p>{{ user.username }}</p>
+        </div>
+
+        <!-- Statistics -->
+        {% if attendances %}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ attendances|length }}</div>
+                <div class="stat-label">Total Hari</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ attendances|selectattr('time_in')|list|length }}</div>
+                <div class="stat-label">Check-in</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ attendances|selectattr('time_out')|list|length }}</div>
+                <div class="stat-label">Check-out</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% set complete_days = attendances|selectattr('time_in')|selectattr('time_out')|list|length %}
+                    {{ complete_days }}
+                </div>
+                <div class="stat-label">Hari Lengkap</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Attendance Table -->
+        <div class="table-container">
+            <div class="table-header">
+                📅 Data 30 Hari Terakhir
+            </div>
+            
+            {% if attendances %}
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Check-in</th>
+                            <th>Check-out</th>
+                            <th>Durasi</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in attendances %}
+                        <tr>
+                            <td>{{ attendance.date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if attendance.time_in %}
+                                    {{ attendance.time_in.strftime('%H:%M') }}
+                                {% else %}
+                                    <span class="no-data">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance.time_out %}
+                                    {{ attendance.time_out.strftime('%H:%M') }}
+                                {% else %}
+                                    <span class="no-data">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance.time_in and attendance.time_out %}
+                                    {% set duration = attendance.time_out - attendance.time_in %}
+                                    {% set hours = duration.seconds // 3600 %}
+                                    {% set minutes = (duration.seconds % 3600) // 60 %}
+                                    {{ hours }}j {{ minutes }}m
+                                {% else %}
+                                    <span class="no-data">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ attendance.status }}">
+                                    {{ attendance.status.title() }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="no-data-message">
+                    <h3>📋 Belum ada data absensi</h3>
+                    <p>Scan QR Code untuk mulai absensi</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Back Button -->
+        <div class="back-button">
+            <a href="javascript:history.back()" class="btn">
+                ← Kembali
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Auto refresh setiap 5 menit
+        setTimeout(() => {
+            window.location.reload();
+        }, 300000);
+
+        // Update title with current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.title = `${timeString} - Riwayat {{ user.username }}`;
+        }
+
+        updateTime();
+        setInterval(updateTime, 60000); // Update every minute
+    </script>
+</body>
+</html>

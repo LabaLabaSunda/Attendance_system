@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Payroll - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="payroll-container">
+    <div class="page-header">
+        <h1>Dashboard Payroll</h1>
+        <p>Minggu: {{ week_start.strftime('%d %B %Y') }} - {{ week_end.strftime('%d %B %Y') }}</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="summary-card total-employees">
+            <div class="card-icon">👥</div>
+            <div class="card-content">
+                <h3>{{ employees|length }}</h3>
+                <p>Total Karyawan</p>
+            </div>
+        </div>
+        <div class="summary-card total-payroll">
+            <div class="card-icon">💰</div>
+            <div class="card-content">
+                <h3>Rp {{ "{:,.0f}".format(total_weekly_pay) }}</h3>
+                <p>Total Gaji Mingguan</p>
+            </div>
+        </div>
+        <div class="summary-card processed">
+            <div class="card-icon">📊</div>
+            <div class="card-content">
+                <h3>{{ current_payrolls|length }}</h3>
+                <p>Payroll Diproses</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-buttons">
+        <a href="{{ url_for('generate_payroll', week_offset=0) }}" class="btn btn-primary">Generate Payroll Minggu Ini</a>
+        <a href="{{ url_for('generate_payroll', week_offset=-1) }}" class="btn btn-secondary">Generate Payroll Minggu Lalu</a>
+    </div>
+
+    <!-- Employee List -->
+    <div class="employee-section">
+        <h2>Daftar Karyawan</h2>
+        <div class="table-container">
+            <table class="employee-table">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Gaji Harian</th>
+                        <th>Upah Lembur/Jam</th>
+                        <th>Hutang</th>
+                        <th>Gaji Minggu Ini</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    {% set payroll = current_payrolls|selectattr('user_id', 'equalto', employee.id)|first %}
+                    {% set salary = employee.salary_info %}
+                    {% set debt = employee.debt_info %}
+                    <tr>
+                        <td><strong>{{ employee.username }}</strong></td>
+                        <td>
+                            {% if salary %}
+                                Rp {{ "{:,.0f}".format(salary.daily_wage) }}
+                            {% else %}
+                                <span class="text-warning">Belum diset</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if salary %}
+                                Rp {{ "{:,.0f}".format(salary.overtime_rate) }}
+                            {% else %}
+                                <span class="text-warning">Belum diset</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if debt and debt.debt_amount > 0 %}
+                                <span class="debt-amount">Rp {{ "{:,.0f}".format(debt.debt_amount) }}</span>
+                            {% else %}
+                                <span class="no-debt">Tidak ada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if payroll %}
+                                <strong class="net-pay">Rp {{ "{:,.0f}".format(payroll.net_pay) }}</strong>
+                            {% else %}
+                                <span class="not-generated">Belum digenerate</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if payroll %}
+                                {% if payroll.is_paid %}
+                                    <span class="status-paid">Sudah Dibayar</span>
+                                {% else %}
+                                    <span class="status-pending">Belum Dibayar</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="status-not-generated">Belum Diproses</span>
+                            {% endif %}
+                        </td>
+                        <td class="action-cell">
+                            <a href="{{ url_for('employee_salary', user_id=employee.id) }}" class="btn btn-small btn-edit">Edit Gaji</a>
+                            {% if payroll %}
+                                <a href="{{ url_for('payslip', payroll_id=payroll.id) }}" class="btn btn-small btn-view">Slip Gaji</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.payroll-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    color: white;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.summary-card.total-employees {
+    border-top: 4px solid #007bff;
+}
+
+.summary-card.total-payroll {
+    border-top: 4px solid #28a745;
+}
+
+.summary-card.processed {
+    border-top: 4px solid #ffc107;
+}
+
+.card-icon {
+    font-size: 3rem;
+    opacity: 0.7;
+}
+
+.card-content h3 {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.card-content p {
+    color: #666;
+    margin: 0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.employee-section {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.employee-section h2 {
+    color: #333;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f1f3f4;
+}
+
+.employee-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.employee-table th,
+.employee-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.employee-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #555;
+}
+
+.employee-table tr:hover {
+    background: #f8f9fa;
+}
+
+.text-warning {
+    color: #ffc107;
+    font-style: italic;
+}
+
+.debt-amount {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.no-debt {
+    color: #28a745;
+    font-style: italic;
+}
+
+.net-pay {
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.not-generated {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.status-paid {
+    background: #28a745;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-pending {
+    background: #ffc107;
+    color: #333;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-not-generated {
+    background: #6c757d;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.action-cell {
+    white-space: nowrap;
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    margin-right: 0.5rem;
+}
+
+.btn-edit {
+    background: #007bff;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #0056b3;
+}
+
+.btn-view {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-view:hover {
+    background: #117a8b;
+}
+
+@media (max-width: 768px) {
+    .payroll-container {
+        padding: 1rem;
+    }
+    
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .employee-table {
+        font-size: 0.85rem;
+    }
+    
+    .employee-table th,
+    .employee-table td {
+        padding: 0.7rem 0.5rem;
+    }
+    
+    .action-cell {
+        white-space: normal;
+    }
+    
+    .btn-small {
+        display: block;
+        margin-bottom: 0.5rem;
+        margin-right: 0;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}
